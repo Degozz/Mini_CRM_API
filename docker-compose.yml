@@ -1,0 +1,51 @@
+services:
+  # 1. База данных Postgres
+  postgres:
+    image: postgres:18-alpine
+    container_name: crm_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - crm_postgres_volume:/var/lib/postgresql
+      - ./back/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. CRM-приложение
+  backend:
+    build:
+      context: ./back               # Указываем, где искать код и Dockerfile
+      dockerfile: Dockerfile
+    container_name: crm_backend
+    ports:
+      - "8080:8080"                 # Пробрасываем порт сервера наружу на наш ПК
+    environment:
+      DB_CONN: ${DB_CONN}           # Передаем строку подключения как переменную окружения
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy  # Сервер запустится только, когда запустится БД Postgres
+
+volumes:
+  crm_postgres_volume:
+
+
+
+
+
+
+
+
+
+
+
+
+
